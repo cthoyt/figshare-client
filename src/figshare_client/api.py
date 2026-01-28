@@ -1,6 +1,5 @@
 """Interact with the Figshare API."""
 
-
 import requests
 from pydantic import BaseModel, ByteSize, HttpUrl
 
