@@ -45,7 +45,7 @@ def ensure_files(record_id: int, *, concurrent: bool = True) -> dict[Path, File]
     submodule = MODULE.module(str(record_id))
 
     def _func(file: File) -> tuple[Path, File]:
-        return submodule.ensure(url=str(file.download_url)), file
+        return submodule.ensure(url=str(file.download_url), name=file.name), file
 
     if concurrent:
         return dict(thread_map(_func, files))
