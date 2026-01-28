@@ -1,14 +1,21 @@
 """Interact with the Figshare API."""
 
+from pathlib import Path
+
+import pystow
 import requests
 from pydantic import BaseModel, ByteSize, HttpUrl
+from tqdm.contrib import tmap
+from tqdm.contrib.concurrent import thread_map
 
 __all__ = [
     "File",
+    "ensure_files",
     "get_files",
 ]
 
 BASE_URL = "https://api.figshare.com/v2/articles"
+MODULE = pystow.module("figshare")
 
 
 class File(BaseModel):
@@ -30,3 +37,17 @@ def get_files(record_id: int) -> list[File]:
     res = requests.get(url, timeout=5)
     res.raise_for_status()
     return [File.model_validate(f) for f in res.json()]
+
+
+def ensure_files(record_id: int, *, concurrent: bool = True) -> dict[Path, File]:
+    """Ensure all files for a record."""
+    files = get_files(record_id)
+    submodule = MODULE.module(str(record_id))
+
+    def _func(file: File) -> tuple[Path, File]:
+        return submodule.ensure(url=str(file.download_url)), file
+
+    if concurrent:
+        return dict(thread_map(_func, files))
+    else:
+        return dict(tmap(_func, files))

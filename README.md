@@ -37,9 +37,17 @@ A client to Figshare.
 
 ## 💪 Getting Started
 
-> TODO show in a very small amount of space the **MOST** useful thing your
-> package can do. Make it as short as possible! You have an entire set of docs
-> for later.
+```python
+from figshare_client import get_files, ensure_files
+
+opencitations_record_id = 24356626
+
+# get objects describing files
+infos = get_files(opencitations_record_id)
+
+# download files locally
+path_to_info = ensure_files(opencitations_record_id)
+```
 
 ### Command Line Interface
 
