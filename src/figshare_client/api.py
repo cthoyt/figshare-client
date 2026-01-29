@@ -1,6 +1,7 @@
 """Interact with the Figshare API."""
 
 from pathlib import Path
+from typing import Any
 
 import pystow
 import requests
@@ -39,7 +40,9 @@ def get_files(record_id: int) -> list[File]:
     return [File.model_validate(f) for f in res.json()]
 
 
-def ensure_files(record_id: int, *, concurrent: bool = True) -> dict[Path, File]:
+def ensure_files(
+    record_id: int, *, concurrent: bool = True, tqdm_kwargs: dict[str, Any] | None = None
+) -> dict[Path, File]:
     """Ensure all files for a record."""
     files = get_files(record_id)
     submodule = MODULE.module(str(record_id))
@@ -47,7 +50,15 @@ def ensure_files(record_id: int, *, concurrent: bool = True) -> dict[Path, File]
     def _func(file: File) -> tuple[Path, File]:
         return submodule.ensure(url=str(file.download_url), name=file.name), file
 
+    _tqdm_kwargs = {
+        "desc": f"downloading figshare:{record_id}",
+        "unit": "file",
+        "leave": False,
+    }
+    if tqdm_kwargs:
+        _tqdm_kwargs.update(tqdm_kwargs)
+
     if concurrent:
-        return dict(thread_map(_func, files))
+        return dict(thread_map(_func, files, **_tqdm_kwargs))
     else:
-        return dict(tmap(_func, files))
+        return dict(tmap(_func, files, **_tqdm_kwargs))
